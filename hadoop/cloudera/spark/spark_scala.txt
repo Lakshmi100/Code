@@ -1,0 +1,11 @@
+//find out order that created maximum revenue from the order_items table
+// order_items and orders table needs sqoop imported into HDFS before executing
+//below scala commands
+
+val ordersItemsRDD = sc.textFile("/user/cloudera/sqoop_import/order_items")
+
+//orderItemsMap will have order_id from order_items table and the order_subtotal for that item
+val orderItemsMap = ordersItemsRDD.map(rec => (rec.split(",")(1).toInt , rec.split(",")(4).toFloat))
+//now get revenue per order , reduceByKey will do that
+val revenuePerOrder = orderItemsMap.reduceByKey((acc,value) => acc +value)
+revenuePerOrder.reduce((acc,value) => (if (acc._2 >= value._2) acc else value))
