@@ -24,3 +24,33 @@ hadoop fs -put -f products/part* /user/cloudera/sqoop_import/products
 val highPrcProduct = productPriceMap.reduce((p1 ,p2) => (if (p1.toFloat >= p2.toFloat) p1 else p2))
 
 
+//find and sort products per category with and order by the highest price
+
+val productsIdMap = products.map(rec => (rec.split(",")(0) , rec))
+
+productsIdMap.lookup("208")
+//above lookup with product id as the key renders this result
+//res33: Seq[String] = WrappedArray(208,10,SOLE E35 Elliptical,,1999.99,http://images.acmesports.sports/SOLE+E35+Elliptical)
+//But productsGroupBy map , does not render this record as the first record after the sort By and groubBy on these maps
+
+val products = sc.textFile("/user/cloudera/sqoop_import/products")
+val productsMap = products.map(rec => (rec.split(",")(1) , rec)) // take product category id as the Key
+
+productsMap.take(5).foreach(println)
+
+val productsGroupBy = productsMap.groupByKey()
+
+productsGroupBy.take(10).foreach(println)
+
+//below flattens just the values alone
+productsGroupBy.flatMapValues(x => x).take(10)foreach(println)
+
+//flatMap , sortBy product price descending (notice the -k will sort by desc) and take 25 top records
+productsGroupBy.flatMap(rec => (rec._2.toList.sortBy(k => -k.split(",")(4).toFloat))).take(25)foreach(println)
+//above scala command renders below as the first few lines of the 25 records from the groupByRDD
+//66,4,SOLE F85 Treadmill,,1799.99,http://images.acmesports.sports/SOLE+F85+Treadmill
+//60,4,SOLE E25 Elliptical,,999.99,http://images.acmesports.sports/SOLE+E25+Elliptical
+//71,4,Diamondback Adult Response XE Mountain Bike //2,,349.98,http://images.acmesports.sports/Diamondback+Adult+Response+XE+Mountain+Bike+2014
+//68,4,Diamondback Adult Outlook Mountain Bike //2014,,309.99,http://images.acmesports.sports/Diamondback+Adult+Outlook+Mountain+Bike+2014
+//***Developer comment - record with id product_id 208 is not part of the output from above 
+
