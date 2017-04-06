@@ -1,0 +1,33 @@
+//Mostly repeat scripts form dgadiraju's hive turorial excepts for
+//some changes
+
+-- Create sample database
+-- CREATE DATABASE IF NOT EXISTS cards;
+
+CREATE TABLE deck_of_cards (
+COLOR string,
+SUIT string,
+PIP string)
+ROW FORMAT DELIMITED FIELDS TERMINATED BY '|'
+STORED AS TEXTFILE;
+
+--Download deckofcards.txt from github repository www.github.com/dgadiraju/data
+--mkdir -p ~/demo/data/cards
+--copy file deckofcards.txt to ~/demo/data/cards
+LOAD DATA LOCAL INPATH '/home/cloudera/demo/data/cards/deckofcards.txt' INTO TABLE deck_of_cards;
+
+CREATE EXTERNAL TABLE deck_of_cards_external (
+COLOR string,
+SUIT string,
+PIP string)
+ROW FORMAT DELIMITED FIELDS TERMINATED BY '|'
+STORED AS TEXTFILE
+LOCATION '/user/hive/warehouse/cards.db/deck_of_cards';
+
+//Now query mysql to see or fetch the most sold item per the revenue grouping by department name
+
+select d.department_name , round(sum(order_item_subtotal) , 2) from departments d right outer join categories c 
+on d.department_id = c.category_department_id join products p on c.category_id = p.product_category_id join 
+order_items o on p.product_id = o.order_item_product_id group by department_name;
+
+//per the data coming from out of the box on cloudera's quick start VM , FAN SHOP fetches the most sold items
