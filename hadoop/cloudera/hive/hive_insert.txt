@@ -1,0 +1,53 @@
+## New file to copy mysql data into Hive staging tables by sqoop and then insert tweaked 
+## data into Hive ods (online data store ) tables
+## Most code is from dgadiraju's github hive turorial and tweaked as per my results and dir
+## structure of where the .avsc files are created
+
+
+-- Latest syntax using stored as avro
+-- Run the sqoop import 
+sqoop import-all-tables \
+  -m 12 \
+  --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+  --username=retail_dba \
+  --password=cloudera \
+  --as-avrodatafile \
+  --warehouse-dir=/user/hive/warehouse/retail_stage.db
+
+-- It will create directories under warehouse-dir and copy data to that location
+-- The command will also generate avsc files for each of the table with sqoop_import_<table_name>.avsc
+-- Create directory in hdfs /user/cloudera/retail_stage
+-- Copy all avsc files using hadoop fs -put /<path>/*.avsc /user/cloudera/retail_stage
+-- Now you can create table in retail_stage db for all the data you have copied
+
+use retail_stage;
+
+CREATE EXTERNAL TABLE categories
+STORED AS AVRO
+LOCATION 'hdfs:///user/hive/warehouse/retail_stage.db/categories'
+TBLPROPERTIES ('avro.schema.url'='hdfs://quickstart.cloudera/user/cloudera/retail_stage/categories.avsc');
+
+CREATE EXTERNAL TABLE customers
+STORED AS AVRO
+LOCATION 'hdfs:///user/hive/warehouse/retail_stage.db/customers'
+TBLPROPERTIES ('avro.schema.url'='hdfs://quickstart.cloudera/user/cloudera/retail_stage/customers.avsc');
+
+CREATE EXTERNAL TABLE departments
+STORED AS AVRO
+LOCATION 'hdfs:///user/hive/warehouse/retail_stage.db/departments'
+TBLPROPERTIES ('avro.schema.url'='hdfs://quickstart.cloudera/user/cloudera/retail_stage/departments.avsc');
+
+CREATE EXTERNAL TABLE orders
+STORED AS AVRO
+LOCATION 'hdfs:///user/hive/warehouse/retail_stage.db/orders'
+TBLPROPERTIES ('avro.schema.url'='hdfs://quickstart.cloudera/user/cloudera/retail_stage/orders.avsc');
+
+CREATE EXTERNAL TABLE order_items
+STORED AS AVRO
+LOCATION 'hdfs:///user/hive/warehouse/retail_stage.db/order_items'
+TBLPROPERTIES ('avro.schema.url'='hdfs://quickstart.cloudera/user/cloudera/retail_stage/order_items.avsc');
+
+CREATE EXTERNAL TABLE products
+STORED AS AVRO
+LOCATION 'hdfs:///user/hive/warehouse/retail_stage.db/products'
+TBLPROPERTIES ('avro.schema.url'='hdfs://quickstart.cloudera/user/cloudera/retail_stage/products.avsc');
