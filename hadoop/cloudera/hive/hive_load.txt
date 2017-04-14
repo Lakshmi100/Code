@@ -39,6 +39,10 @@ hadoop fs -ls /user/root/departments
 #Launch hive
 hive
 use retail_ods;
+## Main difference is , Load data local will not move the files , but 
+## Load data inpath , will move the files from source location to
+## destination location - from /user/root/departments  to /user/hive/warehouse/retail_ods.db/departments
+
 load data inpath '/user/root/departments/*' overwrite into table departments;
 hadoop fs -ls /user/root/departments
 #You will not find files
