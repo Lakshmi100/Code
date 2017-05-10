@@ -10,6 +10,10 @@ def fact(i: Int) = {
 
 }
 
+/* Recursive factorial */
+
+def factr(n: Int): Int = if (n == 1) 1 else n * factr(n-1)
+
 /*** fibonocci series that gives a series of numbers where the each number 
  is a sum of previous 2 numbers , series starting with 0 and 1 */
 def fibo(i: Int) = {
@@ -26,4 +30,39 @@ println(res + "\t")
 }
 }
 
+/* Generate a List of Fibonocci series */
+
+def fiboList(i: Int) = {
+
+var pre =0
+var curr = 1
+
+   
+var lst =  new ListBuffer[Int]()
+lst += pre
+lst += curr
+
+var res = 0
+
+for(e <- 1 to i){
+
+  res = pre + curr
+
+  pre = curr
+
+  curr = res
+
+  lst += res
+ }
+ lst
+}
+
+/* find out if a number is part of a fibonocci series */
+def  isFibonacci(i : Int)  : Boolean = {
+
+var  mylst = fiboList(i)
+
+mylst.toList.contains(i)
+
+} 
 
