@@ -1,0 +1,29 @@
+def fact(i: Int) = {
+
+  var res = 1
+
+  for(e <- i to 1 by -1)
+
+    res = res * e
+
+  res
+
+}
+
+/*** fibonocci series that gives a series of numbers where the each number 
+ is a sum of previous 2 numbers , series starting with 0 and 1 */
+def fibo(i: Int) = {
+     var pre =0
+     var curr = 1
+     println(pre + "\t")
+     println(curr + "\t")
+var res = 0
+for(e <- 3 to i){
+res = pre + curr
+pre = curr
+curr = res
+println(res + "\t")
+}
+}
+
+
