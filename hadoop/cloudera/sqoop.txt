@@ -1,0 +1,32 @@
+/*** Sqoop commands to import data from mysql to HDFS */
+
+sqoop list-databases --connect "jdbc:mysql://quickstart.cloudera:3306" --username retail_dba --password cloudera
+
+
+sqoop list-tables --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" --username retail_dba --password cloudera
+
+sqoop eval --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+--username retail_dba --password cloudera \
+--query "select count(1) from order_items"
+
+
+sqoop import-all-tables --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+--username retail_dba --password cloudera \
+--warehouse-dir=/user/cloudera/sqoop_import
+
+/** import into Hive database */
+
+sqoop import --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+--username retail_dba --password cloudera --table departments \
+--warehouse-dir=/user/hive/warehouse --hive-import --hive-overwrite \
+--create-hive-table --compress --compression-codec org.apache.hadoop.io.compress.SnappyCodec \
+--outdir java_files
+
+
+/** specify the hive database that u want to import to */
+
+sqoop import --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" --username retail_dba \
+--password cloudera --table departments --hive-import --hive-overwrite \
+--create-hive-table --hive-database retail_edw \
+--compress --compression-codec org.apache.hadoop.io.compress.SnappyCodec \
+--outdir java_files
