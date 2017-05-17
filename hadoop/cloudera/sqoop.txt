@@ -30,3 +30,13 @@ sqoop import --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" --usern
 --create-hive-table --hive-database retail_edw \
 --compress --compression-codec org.apache.hadoop.io.compress.SnappyCodec \
 --outdir java_files
+
+/** Append into hive database using check-column , incremental , last-value   , --append will append data to an existing dataset in HDFS , if not in place , subsequent imports gets only the new rows in HDFS and removes ols part-m-00* files, 
+notice --hive-overwrite is not in place , if u are appending only new rows into Hive table , the hive-overwrite will 
+remove the old part-m files and bring in only new part-m-00* files **/
+
+sqoop import  --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" --username retail_dba \                             --password cloudera --table departments --hive-import --check-column department_id \                                         --incremental append --last-value 7
+
+/** Append into HDFS using check-column , incremental , last-value   , below Sqoop import creates same results regardless of of using --append or not , all new rows are brought into HDFS **/
+
+sqoop import  --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" --username retail_dba \                            --password cloudera --table departments --append --target-dir /user/cloudera/sqoop_import/departments \                      --check-column department_id --incremental append --last-value 7
