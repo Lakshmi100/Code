@@ -1,5 +1,7 @@
 
-
+//mostly derived my version from Durga Gadiraju hadoop videos and cloudra hadoop getting started tutorial
+//Problem statement - Get Per order Total, Total Order Revenue per day and Total number of orders per day
+//and calculate average revenue per day
 //Orders Map - first element is the order id - notice the key is converted to integer
 ordersRDD = sc.textFile("/user/cloudera/sqoop_import/orders")
 ordersMap = ordersRDD.map(lambda rec: (int(rec.split(",")[0]) , rec))
