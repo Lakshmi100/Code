@@ -79,12 +79,19 @@ for rec in finalJoinRDD.sortByKey.collect():
 orderItemsRDD = sc.textFile("/user/cloudera/sqoop_import/order_items")
 
 orderItemsMap = orderItemsRDD.map(lambda rec: float(rec.split(",")[4]))
+//Total revenue of orders from order Items
 totalRevenue = orderItemsMap.reduce(lambda acc,val: acc +val)
 
 totalOrders = orderItemsRDD.map(lambda rec: rec.split(",")[1]).distinct().count()
 
 avgRevenue = totalRevenue/totalOrders
 
+//find out the max priced product from products table
+productsRDD = sc.textFile("/user/cloudera/sqoop_import/products")
+productsMap = productsRDD.map(lambda rec: float(rec.split(",")[4]))
+
+highPricedItem = productsMap.reduce(lambda x , y: x if(x >= y) else y)
 
 
-//Total revenue of orders from order Items
+
+
