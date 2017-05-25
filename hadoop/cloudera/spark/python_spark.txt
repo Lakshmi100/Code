@@ -69,7 +69,60 @@ avgRevenuePerDay = finalJoinRDD.map(lambda rec: (rec[0] , rec[1][1] / rec[1][0])
 //print this after sortByKey to see it from latest date
 for rec in finalJoinRDD.sortByKey.collect():
  print(rec)
+ #####All the above can be done use HiveContext in spark , just by using one sql
+ ###Here is how
  
+ from pyspark.sql import HiveContext
+ sqlContext = HiveContext(sc)
+ 
+ ###This needs to be set as an performance enhancing option
+ ###The join or the collect/take from the join will fetch results , but 
+ ### will take more time , if not set
+ sqlContext.sql("set spark.sql.shuffle.partitions=10");
+ 
+ joinDataFinal = sqlContext.sql("select o.order_date , count(distinct o.order_id) , sum(oi.order_item_subtotal) \
+ from orders o join order_items oi on o.order_id = oi.order_item_id group by o.order_date order by o.order_date")
+ 
+ for rec in joinDataFinal.take(50):
+   print(rec)
+   
+ for rec in joinDataFinal.collect():
+   print(rec)
+   
+ 
+ **** Using Spark SQL ****
+ 
+ from pyspark.sql import SQLContext, Row
+sqlContext = SQLContext(sc)
+sqlContext.sql("set spark.sql.shuffle.partitions=10");
+
+ordersRDD = sc.textFile("/user/cloudera/sqoop_import/orders")
+ordersMap = ordersRDD.map(lambda o: o.split(","))
+orders = ordersMap.map(lambda o: Row(order_id=int(o[0]), order_date=o[1], \
+order_customer_id=int(o[2]), order_status=o[3]))
+ordersSchema = sqlContext.inferSchema(orders)
+ordersSchema.registerTempTable("orders")
+
+orderItemsRDD = sc.textFile("/user/cloudera/sqoop_import/order_items")
+orderItemsMap = orderItemsRDD.map(lambda oi: oi.split(","))
+orderItems = orderItemsMap.map(lambda oi: Row(order_item_id=int(oi[0]), order_item_order_id=int(oi[1]), \
+order_item_product_id=int(oi[2]), order_item_quantity=int(oi[3]), order_item_subtotal=float(oi[4]), \
+order_item_product_price=float(oi[5])))
+orderItemsSchema = sqlContext.inferSchema(orderItems)
+orderItemsSchema.registerTempTable("order_items")
+
+joinAggData = sqlContext.sql("select o.order_date, sum(oi.order_item_subtotal), \
+count(distinct o.order_id) from orders o join order_items oi \
+on o.order_id = oi.order_item_order_id \
+group by o.order_date order by o.order_date")
+
+for data in joinAggData.collect():
+  print(data)
+
+
+****************************Calculate aggregate statistics (avg,sum or highest) using spark ************
+#Mostly from Dgadiraju's spark tutorials ,trying out my own version
+# Sum
 
 //now , there are these spark actions or transformations , that we can apply on RDD
 //which will fetch the same results above just in a one step or two
@@ -85,6 +138,13 @@ totalRevenue = orderItemsMap.reduce(lambda acc,val: acc +val)
 totalOrders = orderItemsRDD.map(lambda rec: rec.split(",")[1]).distinct().count()
 
 avgRevenue = totalRevenue/totalOrders
+
+#Get max priced product from products table
+#There is one record which is messing up default , delimiters
+#Clean it up (we will see how we can filter with out deleting the record later)
+hadoop fs -get /user/cloudera/sqoop_import/products
+#Delete the record with product_id 685
+hadoop fs -put -f products/part* /user/cloudera/sqoop_import/products
 
 //find out the max priced product from products table
 productsRDD = sc.textFile("/user/cloudera/sqoop_import/products")
