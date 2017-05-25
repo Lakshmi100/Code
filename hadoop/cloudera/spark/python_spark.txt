@@ -66,5 +66,9 @@ finalJoinRDD = ordersPerdaySummedup.join(revenuePerday)
 //now arrive at avgRevenuePer day from above
 avgRevenuePerDay = finalJoinRDD.map(lambda rec: (rec[0] , rec[1][1] / rec[1][0]))
 
+//print this after sortByKey to see it from latest date
+for rec in finalJoinRDD.sortByKey.collect():
+ print(rec)
+ 
 
 //
