@@ -71,4 +71,20 @@ for rec in finalJoinRDD.sortByKey.collect():
  print(rec)
  
 
-//
+//now , there are these spark actions or transformations , that we can apply on RDD
+//which will fetch the same results above just in a one step or two
+//Lets see how.
+///Get the total number of distinct orders from order_items
+//need to get this from order_items , since only the processed ordersm must have made into order_items
+orderItemsRDD = sc.textFile("/user/cloudera/sqoop_import/order_items")
+
+orderItemsMap = orderItemsRDD.map(lambda rec: float(rec.split(",")[4]))
+totalRevenue = orderItemsMap.reduce(lambda acc,val: acc +val)
+
+totalOrders = orderItemsRDD.map(lambda rec: rec.split(",")[1]).distinct().count()
+
+avgRevenue = totalRevenue/totalOrders
+
+
+
+//Total revenue of orders from order Items
