@@ -152,6 +152,35 @@ productsMap = productsRDD.map(lambda rec: float(rec.split(",")[4]))
 
 highPricedItem = productsMap.reduce(lambda x , y: x if(x >= y) else y)
 
+// find all canceled orders with order total more than $1000
+//Filter out cancelled orders first , get order_item subtotal added per order from order items
+//now join these 2 RDDs and filter again by revenue >= 1000
+//joining after the filter and after the reduceByKey , the join is
+//much more efficient
+
+
+ordersRDD = sc.textFile("/user/cloudera/sqoop_import/orders")
+orderItemsRDD = sc.textFile("/user/cloudera/sqoop_import/order_items")
+ordersRDD.count()
+
+ordersParsedRDD = ordersRDD.filter(lambda rec: rec.split(",")[3] == "CANCELED").map(lambda rec: (int(rec.split(",")[0]) , rec))
+
+ordersParsedRDD.count() // check the diff in this count and the ordersRDD.count()
+
+for i in ordersParsedRDD.take(10): print(i)
+ordersItemsParsedRDD = orderItemsRDD.map(lambda rec: (int(rec.split(",")[1]) , float(rec.split(",")[4]) ) )
+
+for i in ordersItemsParsedRDD.take(10): print(i)
+orderItemsAgg = ordersItemsParsedRDD.reduceByKey(lambda x,y: x + y)
+
+order1 = orderItemsAgg.lookup(1) // just testing if some order that u know in there can be looked up
+orderItemsJoinOrders = orderItemsAgg.join(ordersParsedRDD)
+
+for i in orderItemsJoinOrders.sortByKey().take(10): print(i)
+for i in orderItemsJoinOrders.filter(lambda rec: rec[1][0] >= 1000 ).take(10):print(i)
+orderItemsJoinOrders.filter(lambda rec: rec[1][0] >= 1000 ).count()
+//resulting count in 139 as opposed to durga's 1728 or something
+
 
 
 
