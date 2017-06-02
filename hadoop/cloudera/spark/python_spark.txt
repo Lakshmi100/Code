@@ -181,6 +181,33 @@ for i in orderItemsJoinOrders.filter(lambda rec: rec[1][0] >= 1000 ).take(10):pr
 orderItemsJoinOrders.filter(lambda rec: rec[1][0] >= 1000 ).count()
 //resulting count in 139 as opposed to durga's 1728 or something
 
+*****Sorting and Ranking *****
+// Global sorting , just sort by the highest price in the products
+productsRDD = sc.textFile("/user/cloudera/sqoop_import/products")
+//get fourth field - product_price as key for Global sort on price
+productsPriceMap = productsRDD.map(lambda line: (float(line.split(",")[4]), line))
+for i in productsPriceMap.sortByKey().take(25): print(i)
+//sort in descending order, sortByKey takes a optional parameter , default is true 
+for i in productsPriceMap.sortByKey(False).take(25): print(i)
 
+//again secondary sorting using , have price and product_id as the key
+productsPriceMap = productsRDD.map(lambda line: ((float(line.split(",")[4]) , int(line.split(",")[0])), line))
+for i in productsPriceMap.sortByKey(False).take(5): print(i)
+
+// just show the record , ignoring the composite key , since the record contains the key
+for i in productsPriceMap.sortByKey(False).map(lambda rec: rec[1]).take(5): print(i)
+
+
+// sort by price per category
+//group by category first and then go for sorting of the list (need to know basic python opertaions
+//on a list )
+productsMap = productsRDD.map(lambda line: (line.split(",")[1], line))
+
+productsGroupBy = productsMap.groupByKey().
+//now "sorted" python operation takes a optional 'key' parameter and 'reverse' parameter
+for i in productsGroupBy.map(lambda rec: sorted(rec[1] , key = lambda k: float(k.split(",")[4]) , reverse=True)).take(25):
+print(i)
+
+ 
 
 
