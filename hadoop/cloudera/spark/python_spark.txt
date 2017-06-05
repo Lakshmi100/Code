@@ -1,5 +1,6 @@
 
-//mostly derived my version from Durga Gadiraju hadoop videos and cloudra hadoop getting started tutorial
+//mostly derived from Durga Gadiraju's hadoop videos and cloudra hadoop getting started tutorial
+//except for some little tweaks here and there for my version 
 //Problem statement - Get Per order Total, Total Order Revenue per day and Total number of orders per day
 //and calculate average revenue per day
 //Orders Map - first element is the order id - notice the key is converted to integer
@@ -219,10 +220,33 @@ def getTopN(rec , topN):
 
 
 for i in productsMap.groupByKey().flatMap(lambda rec: getTopN(rec , 5)).collect(): print(i)
+
 //there is a difference between this print of getTopN call and the previous print(i) , where
 the results are limited to 2 rows per category in this call and previous one just list all the
 results and limits the output to 5 rows altogether (not per category)
 
+// now go for topN priced products ,its called denseRanking in RDBMs world
+//for example , if $599.99 and $ 399.99 are the top 2 prod prices , we need to 
+//get all the records with $599.99 and $399.99 product prices per category
+
+def getTopDenseN(rec , topN):
+  x = [ ]
+  topNPrices = [ ]
+  prodPrices = [ ]
+  prodPricesDesc = [ ]
+  
+  for i in rec[1]:
+    prodPrices.append(float(i.split(",")[4]))
+  prodPricesDesc = list(sorted(set(prodPrices) , reverse=True))
+  import itertools
+  topNPrices = list(itertools.islice(prodPricesDesc , 0, topN))
+  
+  for j in sorted(rec[1] , key = lambda k: float(k.split(",")[4]) , reverse=True):
+    if (float(j.split(",")[4]) in topNPrices):
+     x.append(j)
+  return (y for y in x)   
+  
+for i in productsMap.groupByKey().flatMap(lambda rec: getTopDenseN(rec , 5)).collect(): print(i)
  
 
 
