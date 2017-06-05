@@ -205,8 +205,23 @@ productsMap = productsRDD.map(lambda line: (line.split(",")[1], line))
 
 productsGroupBy = productsMap.groupByKey().
 //now "sorted" python operation takes a optional 'key' parameter and 'reverse' parameter
-for i in productsGroupBy.map(lambda rec: sorted(rec[1] , key = lambda k: float(k.split(",")[4]) , reverse=True)).take(25):
+for i in productsGroupBy.flatMap(lambda rec: sorted(rec[1] , key = lambda k: float(k.split(",")[4]) , reverse=True)).take(5):
 print(i)
+
+//put above sort operation in a seperate function , so we can fetch so many
+//number of records per input parameter 
+
+def getTopN(rec , topN):
+   x = [ ]
+   x = list(sorted(rec[1] , key=lambda k: float(k.split(",")[4]) , reverse =True))
+   import itertools
+   return (y for y in list(itertools.islice(x , 0 , topN)))
+
+
+for i in productsMap.groupByKey().flatMap(lambda rec: getTopN(rec , 5)).collect(): print(i)
+//there is a difference between this print of getTopN call and the previous print(i) , where
+the results are limited to 2 rows per category in this call and previous one just list all the
+results and limits the output to 5 rows altogether (not per category)
 
  
 
