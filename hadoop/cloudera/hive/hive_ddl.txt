@@ -1,0 +1,16 @@
+//if the tables are already there , drop tables , make sure they are previous external
+//tables , before dropping them, otherwise u loose the data.
+//Managed tables when dropped , will delete the data associated with it in HDFS
+//So always create EXTERNAL tables, so ur HDFS data for hive is still there
+
+CREATE EXTERNAL TABLE products
+STORED AS AVRO
+LOCATION 'hdfs:///user/hive/warehouse/retail_stage.db/products'
+TBLPROPERTIES('avro.schema.url'='hdfs://quickstart.cloudera/user/cloudera/retail_stage/products.avsc')
+
+//also below will work
+
+CREATE EXTERNAL TABLE products
+STORED AS AVRO
+LOCATION 'hdfs://quickstart.cloudera/user/hive/warehouse/retail_stage.db/products'
+TBLPROPERTIES('avro.schema.url'='hdfs://quickstart.cloudera/user/cloudera/retail_stage/products.avsc')
