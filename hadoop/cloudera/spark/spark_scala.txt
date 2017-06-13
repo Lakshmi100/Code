@@ -12,6 +12,33 @@ val dataReduceByKey = dataMap.reduceByKey((acc , value) => acc + value)
 dataReduceByKey.saveAsTextFile("/user/cloudera/scalaspark/wordcountoutScala")
 
 
+**************
+//find out TotalRevenue Per Day  and total Orders per day
+// and then find out Average revenue Per day 
+
+val revenuePerOrderPerDay = ordersJoinOrderItems.map(rec => (rec._2._2.split(",")(1), rec._2._1.split(",")(4).toFloat));
+val revenuePerDay = revenuePerOrderPerDay.reduceByKey((x , y) => x + y)
+
+revenuePerDay.sortByKey().collect().foreach(println)
+
+val ordersPerDay = ordersJoinOrderItems.map(rec => rec._2._2.split(",")(1) + "," + rec._1).distinct();
+
+ordersPerDay.take(20).foreach(println);
+val ordersPerDayParsedRDD = ordersPerDay.map(rec => (rec.split(",")(0) , 1));
+val totalOrdersPerDay = ordersPerDayParsedRDD.reduceByKey((x,y) => x + y)
+totalOrdersPerDay.sortByKey().collect().foreach(println)
+
+
+//now do the average revenue per Day , from the Total Revenue Per day and Total orders per day
+//both map have the same key , so create a new join from those maps,
+//to find out average revenue per day
+val finalJoinRDD = totalOrdersPerDay.join(revenuePerDay)
+
+finalJoinRDD.collect().foreach(println)
+
+**************
+
+
 //find out order that created maximum revenue from the order_items table
 // order_items and orders table needs sqoop imported into HDFS before executing
 //below scala commands
