@@ -31,10 +31,10 @@ for i in perOrderTotal.take(50):
 
 //get the first element/key from the join , and then the 2nd element in the tuple (which again is a tuple rec[1])
 //rec[1][1] needs split to give us the date - 2nd element after the split
-ordersPerday = orderItemsjoinOrders.map(lambda rec: (str(rec[0]) + "," + rec[1][1].split(",")[1])).distinct()
 
 //retrieve order # and order date from orderItemsJoinOrders and get the distinct 
 //since each order/date combo can be in there for all the order items in a order
+
 ordersPerday = orderItemsjoinOrders.map(lambda rec: (str(rec[0]) + "," + rec[1][1].split(",")[1])).distinct()
 
 //since the order/date compound Key is distinct , just get the date from
