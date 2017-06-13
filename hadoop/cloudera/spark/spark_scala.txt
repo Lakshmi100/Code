@@ -1,3 +1,17 @@
+//word coutn program in scala
+
+val data  = sc.textFile("/user/cloudera/wordcountScala.txt")
+val dataFlatMap = data.flatMap(x => x.split(" "))
+dataFlatMap.collect().foreach(println)
+val dataMap = dataFlatMap.map(x => (x , 1))
+val count = dataMap.countByKey()
+
+//u can also call reduceByKey and then save the results back to HDFS
+val dataReduceByKey = dataMap.reduceByKey((acc , value) => acc + value)
+
+dataReduceByKey.saveAsTextFile("/user/cloudera/scalaspark/wordcountoutScala")
+
+
 //find out order that created maximum revenue from the order_items table
 // order_items and orders table needs sqoop imported into HDFS before executing
 //below scala commands
