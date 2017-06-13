@@ -12,7 +12,7 @@ val dataReduceByKey = dataMap.reduceByKey((acc , value) => acc + value)
 dataReduceByKey.saveAsTextFile("/user/cloudera/scalaspark/wordcountoutScala")
 
 
-**************
+***********************************************************************
 //find out TotalRevenue Per Day  and total Orders per day
 // and then find out Average revenue Per day 
 
@@ -36,7 +36,9 @@ val finalJoinRDD = totalOrdersPerDay.join(revenuePerDay)
 
 finalJoinRDD.collect().foreach(println)
 
-**************
+val avgRevPerDay = finalJoinRDD.map(rec => (rec._1 , rec._2._2 /rec._2._1))
+
+************************************************************************
 
 
 //find out order that created maximum revenue from the order_items table
