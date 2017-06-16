@@ -12,9 +12,18 @@ val dataReduceByKey = dataMap.reduceByKey((acc , value) => acc + value)
 dataReduceByKey.saveAsTextFile("/user/cloudera/scalaspark/wordcountoutScala")
 
 
-***********************************************************************
+**********************Using reduceByKey ****************************
 //find out TotalRevenue Per Day  and total Orders per day
 // and then find out Average revenue Per day 
+
+
+val ordersRDD = sc.textFile("/user/cloudera/sqoop_import/orders")
+val ordersItemsRDD = sc.textFile("/user/cloudera/sqoop_import/order_items")
+
+val ordersMap = ordersRDD.map(rec => (rec.split(",")(0) , rec))
+val orderItemsMap = orderItemsRDD.(rec => (rec.split(",")(1) , rec))
+
+val ordersJoinOrderItems = orderItemsMap.join(ordersMap)
 
 val revenuePerOrderPerDay = ordersJoinOrderItems.map(rec => (rec._2._2.split(",")(1), rec._2._1.split(",")(4).toFloat));
 val revenuePerDay = revenuePerOrderPerDay.reduceByKey((x , y) => x + y)
@@ -38,8 +47,43 @@ finalJoinRDD.collect().foreach(println)
 
 val avgRevPerDay = finalJoinRDD.map(rec => (rec._1 , rec._2._2 /rec._2._1))
 
-************************************************************************
+*************Using aggregateByKey **************************
 
+//Total revenue Perday and total orders per day and then
+//the average Revenue Per day is calculated using reduceByKey
+//and aggregatebyKey functions
+
+val ordersRDD = sc.textFile("/user/cloudera/sqoop_import/orders")
+val ordersItemsRDD = sc.textFile("/user/cloudera/sqoop_import/order_items")
+
+val ordersMap = ordersRDD.map(rec => (rec.split(",")(0) , rec))
+val orderItemsMap = orderItemsRDD.(rec => (rec.split(",")(1) , rec))
+
+val ordersJoinOrderItems = orderItemsMap.join(ordersMap)
+
+val ordersJoinOrderItemsMap = ordersJoinOrderItems.map(rec => ((rec._2._2.split(",")(1) , rec._1 ) , rec._2._1.split(",")(4).toFloat));
+
+val revenuePerOrderPerDay = ordersJoinOrderItemsMap.reduceByKey((acc , value) => acc + value)
+
+//now discard the order# and just fetch order date and revenue 
+val revenuePerOrderPerDayMap = revenuePerOrderPerDay.map(rec => (rec._1._1 , rec._2))
+
+val revenuePerDay = revenuePerOrderPerDayMap.aggregateByKey((0.0 ,0) , (
+(acc,value) => (acc._1 + value , acc._2 + 1) , 
+(x , y) => (x._1 + y._1 , x._2 + y._2) ) )
+
+
+val avgRevPerDay = revenuePerDay.map(z =>  (y._1, y._2._1/y._2._2))
+
+
+
+*************************combineByKey *******************
+
+//need to find a use case for combineBykey and add code here
+
+
+
+*************************
 
 //find out order that created maximum revenue from the order_items table
 // order_items and orders table needs sqoop imported into HDFS before executing
