@@ -83,7 +83,18 @@ val avgRevPerDay = revenuePerDay.map(z =>  (y._1, y._2._1/y._2._2))
 
 
 
-*************************
+*************************Toprevenue producing customer*************
+
+
+
+
+
+****do the same with the HiveContext and Sql
+
+*******************
+
+
+
 
 //find out order that created maximum revenue from the order_items table
 // order_items and orders table needs sqoop imported into HDFS before executing
