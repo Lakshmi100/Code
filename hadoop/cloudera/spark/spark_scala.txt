@@ -85,6 +85,11 @@ val avgRevPerDay = revenuePerDay.map(z =>  (y._1, y._2._1/y._2._2))
 
 *************************Toprevenue producing customer*************
 
+val products = sc.textFile("/user/cloudera/sqoop_import/products")
+val productsRDD = products.map(rec => rec.split(",")(3) , rec)
+
+productsRDD.take(10).foreach(println)
+
 
 
 
