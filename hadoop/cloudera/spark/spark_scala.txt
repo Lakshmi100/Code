@@ -68,12 +68,12 @@ val revenuePerOrderPerDay = ordersJoinOrderItemsMap.reduceByKey((acc , value) =>
 //now discard the order# and just fetch order date and revenue 
 val revenuePerOrderPerDayMap = revenuePerOrderPerDay.map(rec => (rec._1._1 , rec._2))
 
-val revenuePerDay = revenuePerOrderPerDayMap.aggregateByKey((0.0 ,0) , (
-(acc,value) => (acc._1 + value , acc._2 + 1) , 
-(x , y) => (x._1 + y._1 , x._2 + y._2) ) )
+val revenuePerDayWithOrders= revenuePerOrderPerDayMap.aggregateByKey((0.0 , 0)) (                                          (acc , value) => (acc._1 + value , acc._2 + 1) , 
+(x,y) => (x._1 + y._1 , x._2 + y._2) )
 
+revenuePerDayWithOrders.take(100).foreach(println)
 
-val avgRevPerDay = revenuePerDay.map(z =>  (y._1, y._2._1/y._2._2))
+val avgRevPerDay = revenuePerDayWithOrders.map(z =>  (z._1, z._2._1/z._2._2))
 
 
 
@@ -182,4 +182,21 @@ productsGroupBy.flatMap(rec => (rec._2.toList.sortBy(k => -k.split(",")(4).toFlo
 //71,4,Diamondback Adult Response XE Mountain Bike //2,,349.98,http://images.acmesports.sports/Diamondback+Adult+Response+XE+Mountain+Bike+2014
 //68,4,Diamondback Adult Outlook Mountain Bike //2014,,309.99,http://images.acmesports.sports/Diamondback+Adult+Outlook+Mountain+Bike+2014
 //***Developer comment - record with id product_id 208 is not part of the output from above 
+
+
+******Filter data using spark***********
+
+
+val orders = sc.textFile("/user/cloudera/sqoop_import/orders")
+
+val ordersFiltered = orders.filter(rec => rec.split(",")(3).equals("CANCELLED"))
+
+val ordersMap = orders.map(rec => (rec.split(",")(0) , rec))
+
+val orderItems = sc.textFile("/user/cloudera/sqoop_import/order_items")
+val orderItemsMap = orderItems.map(rec => (rec.split(",")(1) , rec))
+val ordersJoinOrderItems = orderItemsMap.join(ordersMap)
+
+
+
 
