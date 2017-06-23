@@ -85,11 +85,37 @@ val avgRevPerDay = revenuePerDay.map(z =>  (y._1, y._2._1/y._2._2))
 
 *************************Toprevenue producing customer*************
 
-val products = sc.textFile("/user/cloudera/sqoop_import/products")
-val productsRDD = products.map(rec => rec.split(",")(3) , rec)
+val orders = sc.textFile("/user/cloudera/sqoop_import/orders")
+val ordersMap = orders.map(rec => (rec.split(",")(0) , rec))
 
-productsRDD.take(10).foreach(println)
+val orderItems = sc.textFile("/user/cloudera/sqoop_import/order_items")
+val orderItemsMap = orderItems.map(rec => (rec.split(",")(1) , rec))
+val ordersJoinOrderItems = orderItemsMap.join(ordersMap)
 
+//orderes Per day per customer from above join
+val ordersPerDayPerCustomer = ordersJoinOrderItems.map(t => ((t._2._2.split(",")(1) , t._2._2.split(",")(2)) , t._2._1.split(",")(4).toFloat) )
+
+//get revenuePerCustomer by reduceByKey
+val revenuePerDayPerCustomer = ordersPerDayPerCustomer.reduceByKey((acc , value) => acc + value)
+
+//redo revenuePerDayPerCustomer with date as Key , tuple (customer_id , order_total) as value
+val revenuePerDayPerCustomerMap = revenuePerDayPerCustomer.map(t => (t._1._1 , (t._1._2 ,t._2)))
+
+revenuePerDayPerCustomerMap.sortByKey().take(200).foreach(println)
+
+//reduceByKey to see which customer produced highest revenue on a specific day
+//result would be 'Date' as Key , tuple (customer_id , order_item_subtotal) 
+val topCustomerPerDayByRevenue = revenuePerDayPerCustomerMap.reduceByKey((x, y) => if (x._2 >= y._2) x else y)
+
+//above if condn can be done in a pre-defined scala function
+
+def findMax(x:(String,Float) , y:(String,Float)) :(String , Float) = { if (x._2 >= y._2) return x else return y }
+val topCustomerPerDayByRevenue = revenuePerDayPerCustomerMap.reduceByKey((x, y) => findMax(x,y))
+
+topCustomerPerDayByRevenue.sortByKey().take(100).foreach(println)
+
+//below fetches result 364 days - close to a year
+topCustomerPerDayByRevenue.count() 
 
 
 
