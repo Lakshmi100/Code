@@ -10,14 +10,77 @@ sqoop eval --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
 --query "select count(1) from order_items"
 
 
-sqoop import-all-tables --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
---username retail_dba --password cloudera \
+sqoop import-all-tables \
+--connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+--username retail_dba \
+--password cloudera \
 --warehouse-dir=/user/cloudera/sqoop_import
 
+-- import departments into HDFS
+-- Basic import
+sqoop import \
+  --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+  --username=retail_dba \
+  --password=cloudera \
+  --table departments \
+  --target-dir /user/cloudera/departments
+  
+  --import into Hive warehouse directory
+  --copying into existing table ,u need to say 'append'
+  -- and if less number of rows , just use one mapper
+  --before this command , drop any rows in departments table
+  -- in Hive and select from departments after this import
+  
+  sqoop import \
+  --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+  --username=retail_dba \
+  --password=cloudera \
+  --table departments \
+  --target-dir /user/hive/warehouse/retail_ods.db/departments \
+  --append \
+  --fields-terminated-by '|' \
+  --lines-terminated-by '\n' \
+  --num-mappers 1 \
+  --outdir java_files
+  
+  
+-- Importing table with out primary key using multiple threads (split-by)
+-- When using split-by, using indexed column is highly desired
+-- If the column is not indexed then performance will be bad 
+-- because of full table scan by each of the thread
+sqoop import \
+  --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+  --username=retail_dba \
+  --password=cloudera \
+  --table departments \
+  --target-dir /user/hive/warehouse/retail_ods.db/departments \
+  --append \
+  --fields-terminated-by '|' \
+  --lines-terminated-by '\n' \
+  --split-by department_id \
+  --outdir java_files
+
+-- Getting delta (--where) will get u specific rows/updated rows
+sqoop import \
+  --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+  --username=retail_dba \
+  --password=cloudera \
+  --table departments \
+  --target-dir /user/hive/warehouse/retail_ods.db/departments \
+  --append \
+  --fields-terminated-by '|' \
+  --lines-terminated-by '\n' \
+  --split-by department_id \
+  --where "department_id > 7" \
+  --outdir java_files
+  
 /** import into Hive database */
 
-sqoop import --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
---username retail_dba --password cloudera --table departments \
+sqoop import \
+--connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+--username retail_dba \
+--password cloudera \
+--table departments \
 --warehouse-dir=/user/hive/warehouse --hive-import --hive-overwrite \
 --create-hive-table --compress --compression-codec org.apache.hadoop.io.compress.SnappyCodec \
 --outdir java_files
@@ -25,8 +88,13 @@ sqoop import --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
 
 /** specify the hive database that u want to import to */
 
-sqoop import --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" --username retail_dba \
---password cloudera --table departments --hive-import --hive-overwrite \
+sqoop import \
+--connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+--username retail_dba \
+--password cloudera \
+--table departments \
+--hive-import \
+--hive-overwrite \
 --create-hive-table --hive-database retail_edw \
 --compress --compression-codec org.apache.hadoop.io.compress.SnappyCodec \
 --outdir java_files
