@@ -74,16 +74,68 @@ sqoop import \
   --where "department_id > 7" \
   --outdir java_files
   
-/** import into Hive database */
+  --Incremental load
+  
+  sqoop import \
+  --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+  --username=retail_dba \
+  --password=cloudera \
+  --table departments \
+  --target-dir /user/hive/warehouse/retail_ods.db/departments \
+  --append \
+  --fields-terminated-by '|' \
+  --lines-terminated-by '\n' \
+  --check-column "department_id" \
+  --incremental append \
+  --last-value 7 \
+  --outdir java_files
+  
+  **incremental load always gives u the last values to save a job for u 
+  **so u can pick up the furthur loading from where u left
+  
+  sqoop job --create sqoop_job \
+  -- import \
+  --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+  --username=retail_dba \
+  --password=cloudera \
+  --table departments \
+  --target-dir /user/hive/warehouse/retail_ods.db/departments \
+  --append \
+  --fields-terminated-by '|' \
+  --lines-terminated-by '\n' \
+  --check-column "department_id" \
+  --incremental append \
+  --last-value 7 \
+  --outdir java_files
+  
+ 
+ /** import into Hive database */
 
 sqoop import \
 --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
 --username retail_dba \
 --password cloudera \
 --table departments \
---warehouse-dir=/user/hive/warehouse --hive-import --hive-overwrite \
+--warehouse-dir=/user/hive/warehouse \
+--hive-import \
+--hive-overwrite \
 --create-hive-table --compress --compression-codec org.apache.hadoop.io.compress.SnappyCodec \
 --outdir java_files
+
+
+--Create hive table example
+sqoop import \
+  --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+  --username=retail_dba \
+  --password=cloudera \
+  --table departments \
+  --fields-terminated-by '|' \
+  --lines-terminated-by '\n' \
+  --hive-home /user/hive/warehouse \
+  --hive-import \
+  --hive-table departments_test \
+  --create-hive-table \
+  --outdir java_files
 
 
 /** specify the hive database that u want to import to */
