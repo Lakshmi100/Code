@@ -16,6 +16,17 @@ sqoop import-all-tables \
 --password cloudera \
 --warehouse-dir=/user/cloudera/sqoop_import
 
+** for the data analysis part and for loading into retail_ods from retail_stage
+** import all tables into retail_stage in avro format
+
+sqoop import-all-tables \
+  -m 12 \
+  --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+  --username=retail_dba \
+  --password=cloudera \
+  --as-avrodatafile \
+  --warehouse-dir=/user/hive/warehouse/retail_stage.db
+
 -- import departments into HDFS
 -- Basic import
 sqoop import \
