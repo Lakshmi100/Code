@@ -75,6 +75,8 @@ substr(from_unixtime(cast(substr(order_date,1,10) as int)) , 1,7 ) order_month f
 dfs -ls /user/hive/warehouse/retail_stage.db/orders_part_avro
 dfs -ls /user/hive/warehouse/retail_stage.db/orders_part_avro/*
 
+//All new 13 partitions/folders created under /user/hive/warehouse/orders_part_avro folder 
+
 
 
 
