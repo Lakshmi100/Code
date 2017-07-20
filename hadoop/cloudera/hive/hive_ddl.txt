@@ -3,6 +3,8 @@
 //Managed tables when dropped , will delete the data associated with it in HDFS
 //So always create EXTERNAL tables, so ur HDFS data for hive is still there
 
+use reail_stage;
+
 CREATE EXTERNAL TABLE products
 STORED AS AVRO
 LOCATION 'hdfs:///user/hive/warehouse/retail_stage.db/products'
@@ -14,3 +16,38 @@ CREATE EXTERNAL TABLE products
 STORED AS AVRO
 LOCATION 'hdfs://quickstart.cloudera/user/hive/warehouse/retail_stage.db/products'
 TBLPROPERTIES('avro.schema.url'='hdfs://quickstart.cloudera/user/cloudera/retail_stage/products.avsc')
+
+CREATE EXTERNAL TABLE orders 
+STORED AS AVRO
+LOCATION 'hdfs:///user/hive/warehouse/retail_stage.db/orders'
+TBLPROPERTIES ('avro.schema.url'='hdfs://quickstart.cloudera/user/cloudera/retail_stage/orders.avsc');
+
+CREATE EXTERNAL TABLE order_items 
+STORED AS AVRO
+LOCATION 'hdfs:///user/hive/warehouse/retail_stage.db/order_items'
+TBLPROPERTIES ('avro.schema.url'='hdfs://quickstart.cloudera/user/cloudera/retail_stage/order_items.avsc');
+
+CREATE EXTERNAL TABLE departments 
+STORED AS AVRO
+LOCATION 'hdfs:///user/hive/warehouse/retail_stage.db/departments'
+TBLPROPERTIES ('avro.schema.url'='hdfs://quickstart.cloudera/user/cloudera/retail_stage/departments.avsc');
+
+CREATE EXTERNAL TABLE customers 
+STORED AS AVRO
+LOCATION 'hdfs:///user/hive/warehouse/retail_stage.db/customers'
+TBLPROPERTIES ('avro.schema.url'='hdfs://quickstart.cloudera/user/cloudera/retail_stage/customers.avsc');
+
+//now create the orders table with partition order_month
+
+CREATE TABLE orders_part_avro(
+order_id int,
+order_date bigint,
+order_customer_id int,
+order_status string) partitioned by (order_month string)
+STORED AS AVRO
+LOCATION 'hdfs://quickstart.cloudera/user/hive/warehouse/retail_stage.db/orders_part_avro'
+TBLPROPERTIES('avro.schema.url'=hdfs://quickstart.cloudera/user/cloudera/retail_stage/orders_part_avro.avsc)
+
+
+
+
