@@ -46,7 +46,39 @@ order_customer_id int,
 order_status string) partitioned by (order_month string)
 STORED AS AVRO
 LOCATION 'hdfs://quickstart.cloudera/user/hive/warehouse/retail_stage.db/orders_part_avro'
-TBLPROPERTIES('avro.schema.url'=hdfs://quickstart.cloudera/user/cloudera/retail_stage/orders_part_avro.avsc)
+TBLPROPERTIES('avro.schema.url'='hdfs://quickstart.cloudera/user/cloudera/retail_stage/orders_part_avro.avsc')
+
+//Adding partition manually
+alter table orders_part_avro add partition(order_month='2014-01')
+
+//as soon as above stmt is executed , we see a folder with name '2014-01' is created              
+//under /user/hive/warehouse/retail_stage.db/orders_part_avro
+
+//Loading data into Partition
+insert into table orders_part_avro partition (order_month = '2014-01')
+select * from orders where substr(from_unixtime(cast (substr(order_date , 1,10) as int)),1,7) = '2014-01';
+
+//but loading one partition at a time is time consuming unless otherwise , u have a 
+//reason to do that ,so drop the table orders_part_avro and create table again with 
+//and load all data with dynamic partitions 
+
+drop table orders_part_avro;
+
+//create the same table again using the above create command.
+
+insert into table orders_part_avro partition(order_month)
+select order_id , order_data,order_customer_id , order_status , 
+substr(from_unixtime(cast(substr(order_date,1,10) as int)) , 1,7 ) order_month from orders;
+
+//validate below folders for the order-month partitions
+
+dfs -ls /user/hive/warehouse/retail_stage.db/orders_part_avro
+dfs -ls /user/hive/warehouse/retail_stage.db/orders_part_avro/*
+
+
+
+
+
 
 
 
