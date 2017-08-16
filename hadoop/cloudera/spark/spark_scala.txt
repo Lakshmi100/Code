@@ -11,12 +11,15 @@ val dataReduceByKey = dataMap.reduceByKey((acc , value) => acc + value)
 
 dataReduceByKey.saveAsTextFile("/user/cloudera/scalaspark/wordcountoutScala")
 
-***************Find totalRevenuePer day**************************
+***************Find totalRevenuePer day - new version **************************
 val ordersRDD = sc.textFile("/user/cloudera/sqoop_import/orders")
 val order_items = sc.textFile("/user/cloudera/sqoop_import/order_items")
 
-val ordersMap = ordersRDD.map(rec => (rec.split(",")(0).toInt , rec.split(",")(1)))
+ordersRDD.take(5).foreach(println)
 order_items.take(5).foreach(println)
+
+val ordersMap = ordersRDD.map(rec => (rec.split(",")(0).toInt , rec.split(",")(1)))
+ordersMap.take(5).foreach(println)
 
 val orderItemsMap = order_items.map(rec => (rec.split(",")(1).toInt , rec.split(",")(4).toDouble))
 orderItemsMap.take(5).foreach(println)
@@ -26,16 +29,22 @@ ordersJoinOrderItems.take(5).foreach(println)
 
 val ordersJoinOrderItemsMap = ordersJoinOrderItems.map(rec => (rec._2._2, rec._2._1))
 ordersJoinOrderItemsMap.take(5).foreach(println)
+ordersJoinOrderItemsMap.sortByKey().take(10).foreach(println)
 
 //now find the total Revenue per day using reduceByKey
 
 val totalRevenuePerDay = ordersJoinOrderItemsMap.reduceByKey((x,y) => x+y)
-ordersJoinOrderItemsMap.sortByKey().take(10).foreach(println)
+totalRevenuePerDay.count // this will give u 364 , since this is one years data
+
 
 totalRevenuePerDay.take(20).foreach(println)
 totalRevenuePerDay.saveAsTextFile("/user/cloudera/scalaspark/totalRevenuePerDayNew")
+
 //find the maximum revenue producing day 
 val maxRevenueDay = totalRevenuePerDay.reduce((x,y) => {if (x._2 > y._2) x else y})
+//above will give u a tuple , just have to copy the result and save it in
+//HDFS
+
 maxRevenueDay.saveAsTextFile("/user/cloudera/scalaspark/mxRevenueDay")
 
 
@@ -45,9 +54,20 @@ val ordersJoinOrderItemsMapGBK = ordersJoinOrderItemsMap.groupByKey()
 //above gives an RDD of tuples , where the tuple has order date and List of prices
 //so do the sum on the List to get the total revenue on that day
 
-val totalRevenuePerDay= ordersJoinOrderItemsMapGBK.map(rec => (rec._1 , rec._2.sum)
+val revPerDayUsingGBK = ordersJoinOrderItemsMapGBK.map(rec => (rec._1 , rec._2.sum))
+//and now count on this totalRevenuePerDay will fetch u 364 too
+revPerDayUsingGBK.count
 
+revPerDayUsingGBK.saveAsTextFile("/user/cloudera/scalaspark/revPerDayUsingGBK")
 //revenue can be achieved by above groubByKey also
+
+//same totalRevenue Per day can be achieved by aggregateByKey also
+//also this is not a typical scenario for aggregateByKey , we use this
+//api where the combiner logic and the reducer logic are different
+
+val revPerDayUsingAgg = ordersJoinOrderItemsMap.aggregateByKey(0.0)((intAcc,intVal) => intAcc + intVal , (finalAcc , finalVal) => finalAcc + finalVal)
+
+revPerDayUsingAgg.saveAsTextFile("/user/cloudera/scalaspark/revPerDayUsingAgg")
 
 **********************Using reduceByKey ****************************
 //find out TotalRevenue Per Day  and total Orders per day
