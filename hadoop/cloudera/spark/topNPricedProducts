@@ -1,0 +1,100 @@
+import org.apache.spark.{SparkConf, SparkContext}
+
+
+object SortingAndRanking {
+
+
+  val conf = new SparkConf().setMaster("local").setAppName("FileFormats")
+  val sc = new SparkContext(conf)
+
+  val products = sc.textFile("/user/cloudera/sqoop_import/products")
+
+  // split with \\ and then the delimiter
+  val productsMap = products.map(rec => (rec.split("\\,")(4) , rec) )
+
+
+  //top(5) will give the top 5 items sorted with the Key
+  productsMap.top(5).foreach(println)
+
+  //u can sort using sortByKey , false as the argument will sort
+  // in descending order , default is ascending
+  productsMap.sortByKey().map(_._2).take(10).foreach(println)
+  productsMap.sortByKey(false).map(_._2).take(10).foreach(println)
+
+  //takeOrdered on String RDD
+  products.takeOrdered(5)(Ordering[Int].on(k => -k.split(",")(0).toInt)).foreach(println)
+
+  //takeOrdered on keyValue pair RDD
+  productsMap.takeOrdered(5)(Ordering[Double].on(k => -k._2.split(",")(4).toDouble)).foreach(println)
+
+  //now use a composite key (a tuple as a key)and sort using the composite key
+  //And then sortBy will sortBy product category id and then by price within that category
+
+  val productsCategoryMap = products.map(rec => {
+    val r = rec.split("\\,")
+    ((r(1).toInt , r(4).toDouble) , rec)
+    })
+
+  productsCategoryMap.sortByKey().collect.foreach(println)
+
+
+  //Now , if there is a int or Double item in the key , negating that will sortBy
+  // product category id and then by descending price within that category
+
+  val productsRevMap = products.map(rec => {
+    val r = rec.split("\\,")
+    ((r(1).toInt , -r(4).toDouble) , rec)
+    })
+
+  productsRevMap.sortByKey().collect.foreach(println)
+
+  //products GroupBy  category
+
+  val productsMap = products.map(rec => (rec.split(",")(1).toInt,rec))
+
+  val categories = sc.textFile("/user/cloudera/sqoop_import/categories").map(rec => (rec.split(",")(0).toInt,rec.split(",")(2)))
+
+  val productsJoin = productsMap.join(categories).map(rec => (rec._2._2 , rec._2._1))
+
+
+  val productsGroupByCategory = productsJoin.groupByKey()
+
+  productsGroupByCategory.collect.foreach(println)
+
+  def topNProducts(r: Iterable[String] , topN: Int): Iterable[String] = {
+    r.toList.sortBy(k => -k.split(",")(4).toDouble).take(topN)
+    }
+
+  productsGroupByCategory.map(rec => (rec._1 ,topNProducts(rec._2 , 3))).collect.foreach(println)
+
+  //if u want to flatten out the list ,use flatMap, flatMap is not working , but map above is working
+
+  def topNProductsFlat(r: (String ,Iterable[String]) , topN: Int): Iterable[String] = {
+    r._2.toList.sortBy(k => -k.split(",")(4).toDouble).take(topN)
+  }
+
+
+
+  productsGroupByCategory.flatMap(rec => (rec._1 ,topNProductsFlat(rec._2 , 3))).collect.foreach(println)
+
+  //this time return both Category Name and the topN priced products List
+
+  def topNPricedProducts(rec: (String ,Iterable[String]) , topN: Int): Iterable[(String, String)] = {
+
+    val l = rec._2.toList
+    val sortedPrices = l.map(k => k.split(",")(4).toFloat).sorted.reverse.distinct
+    val topNPrices = sortedPrices.take(topN)
+
+
+    rec._2.filter(m => topNPrices.contains(m.split(",")(4).toFloat)).
+      map(r => (rec._1 , r))
+  }
+
+  //get the top 2 priced products
+  productsGroupByCategory.map(rec => topNPricedProducts(rec , 2)).collect.foreach(println)
+
+  //flatMap will give a pretty display in this case
+
+  productsGroupByCategory.flatMap(rec => topNPricedProducts(rec , 3)).collect.foreach(println)
+
+}
