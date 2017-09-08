@@ -46,3 +46,6 @@ use retail_ods;
 load data inpath '/user/root/departments/*' overwrite into table departments;
 hadoop fs -ls /user/root/departments
 #You will not find files
+
+//again u can do load data inpath from HDFS location also , like this 
+load data inpath '/user/cloudera/sqoop_import/products' into table products;
