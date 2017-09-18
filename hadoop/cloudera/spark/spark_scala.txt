@@ -6,6 +6,10 @@ dataFlatMap.collect().foreach(println)
 val dataMap = dataFlatMap.map(x => (x , 1))
 val count = dataMap.countByKey()
 
+//Here u can save the above count(its a Map object) in a text File , since it
+//does not have the saveAsTextFile, hence we do like below
+//do a reduceByKey and then save in HDFS as a textFile
+
 //u can also call reduceByKey and then save the results back to HDFS
 val dataReduceByKey = dataMap.reduceByKey((acc , value) => acc + value)
 
