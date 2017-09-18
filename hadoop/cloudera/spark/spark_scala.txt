@@ -245,7 +245,7 @@ productsGroupBy.flatMap(rec => (rec._2.toList.sortBy(k => -k.split(",")(4).toFlo
 //***Developer comment - record with id product_id 208 is not part of the output from above 
 
 
-******Filter data using spark***********
+******Filter data using spark*********** Find out all cancelled orders that has order total more than 1000 dollars*******
 
 
 val orders = sc.textFile("/user/cloudera/sqoop_import/orders")
