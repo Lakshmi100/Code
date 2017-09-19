@@ -9,7 +9,7 @@ object SortingAndRanking {
 
   val products = sc.textFile("/user/cloudera/sqoop_import/products")
 
-  // split with \\ and then the delimiter
+  // split with \\ and then the delimiter , to make sure , it delimits properly
   val productsMap = products.map(rec => (rec.split("\\,")(4) , rec) )
 
 
@@ -65,17 +65,19 @@ object SortingAndRanking {
     r.toList.sortBy(k => -k.split(",")(4).toDouble).take(topN)
     }
 
+  //the below is called sparse ranking
   productsGroupByCategory.map(rec => (rec._1 ,topNProducts(rec._2 , 3))).collect.foreach(println)
 
   //if u want to flatten out the list ,use flatMap, flatMap is not working , but map above is working
 
   def topNProductsFlat(r: (String ,Iterable[String]) , topN: Int): Iterable[String] = {
-    r._2.toList.sortBy(k => -k.split(",")(4).toDouble).take(topN)
+    r._2.toList.sortBy(k => -k.split(",")(4).toDouble).take(topN).map(k => (r._1 ,k))
   }
 
-
-
-  productsGroupByCategory.flatMap(rec => (rec._1 ,topNProductsFlat(rec._2 , 3))).collect.foreach(println)
+  //since flatMap gives u a tuple(String , String) and the call below will have to call 
+  //topNProductsFlat ,which brings in info both of the rec._1 and rec._2 (ofcourse processed)
+  // code tested,and it works
+  productsGroupByCategory.flatMap(rec => topNProductsFlat(rec , 3)).collect.foreach(println)
 
   //this time return both Category Name and the topN priced products List
 
@@ -85,9 +87,15 @@ object SortingAndRanking {
     val sortedPrices = l.map(k => k.split(",")(4).toFloat).sorted.reverse.distinct
     val topNPrices = sortedPrices.take(topN)
 
-
-    rec._2.filter(m => topNPrices.contains(m.split(",")(4).toFloat)).
+    //this filter does not sort the final display of topN priced items
+    //rec._2.filter(m => topNPrices.contains(m.split(",")(4).toFloat)).
+    //  map(r => (rec._1 , r))
+    
+    //and the output displayed needs sorted too , by price
+    //checked below line of code also, for the final sorted output , it works :)
+    rec._2.filter(m => topNPrices.contains(m.split(",")(4).toFloat)).sortBy(k => -k.split(",")(4).toFloat).
       map(r => (rec._1 , r))
+      
   }
 
   //get the top 2 priced products
