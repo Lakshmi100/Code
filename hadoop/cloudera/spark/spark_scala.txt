@@ -202,7 +202,7 @@ hadoop fs -put -f products/part* /user/cloudera/sqoop_import/products
 val highPrcProduct = productPriceMap.reduce((p1 ,p2) => (if (p1.toFloat >= p2.toFloat) p1 else p2))
 
 
-//find and sort products per category id and order by the highest price
+/******find and sort products per category id and order by the highest price *****/
 
 val productsIdMap = products.map(rec => (rec.split(",")(0) , rec))
 
