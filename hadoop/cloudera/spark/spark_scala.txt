@@ -136,13 +136,9 @@ revenuePerDayWithOrders.take(100).foreach(println)
 
 val avgRevPerDay = revenuePerDayWithOrders.map(z =>  (z._1, z._2._1/z._2._2))
 
-
-
 *************************combineByKey *******************
 
 //need to find a use case for combineBykey and add code here
-
-
 
 *************************Toprevenue producing customer*************
 
@@ -178,15 +174,7 @@ topCustomerPerDayByRevenue.sortByKey().take(100).foreach(println)
 //below fetches result 364 days - close to a year
 topCustomerPerDayByRevenue.count() 
 
-
-
-
-****do the same with the HiveContext and Sql
-
-*******************
-
-
-
+****do the same with the HiveContext and Sql*******************
 
 /*******find out order that created maximum revenue from the order_items table**********
 // order_items and orders table needs sqoop imported into HDFS before executing
@@ -229,7 +217,6 @@ val productsMap = products.map(rec => (rec.split(",")(1) , rec)) // take product
 productsMap.take(5).foreach(println)
 
 val productsGroupBy = productsMap.groupByKey()
-
 productsGroupBy.take(10).foreach(println)
 
 //below flattens just the values alone
@@ -249,14 +236,21 @@ productsGroupBy.flatMap(rec => (rec._2.toList.sortBy(k => -k.split(",")(4).toFlo
 
 
 val orders = sc.textFile("/user/cloudera/sqoop_import/orders")
+val order_items = sc.textFile("/user/cloudera/sqoop_import/order_items")
 
-val ordersFiltered = orders.filter(rec => rec.split(",")(3).equals("CANCELLED"))
+val ordersFiltered = orders.filter(rec => rec.split(",")(3).equals("CANCELED"))
 
-val ordersMap = orders.map(rec => (rec.split(",")(0) , rec))
+val ordersCancelRDD = ordersFiltered.map(rec => (rec.split(",")(0).toInt , rec))
 
-val orderItems = sc.textFile("/user/cloudera/sqoop_import/order_items")
-val orderItemsMap = orderItems.map(rec => (rec.split(",")(1) , rec))
-val ordersJoinOrderItems = orderItemsMap.join(ordersMap)
+
+val order_itemsRDD = order_items.map(rec => (rec.split(",")(1).toInt , rec.split(",")(4).toDouble))
+
+val perOrderTotal = order_itemsRDD.reduceByKey((x,y) => x + y)
+
+val canceledOrdersJoinOrderItems = ordersCancelRDD.join(perOrderTotal)
+val canceledOrdersJoinOrderItemsMap = canceledOrdersJoinOrderItems.map(rec => (rec._1 ,rec._2._2))
+
+val ordersCanceled1000 = canceledOrdersJoinOrderItemsMap.filter(rec => (rec._2 > 1000)).sortByKey(false)
 
 
 
