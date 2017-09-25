@@ -16,19 +16,19 @@ val dataReduceByKey = dataMap.reduceByKey((acc , value) => acc + value)
 dataReduceByKey.saveAsTextFile("/user/cloudera/scalaspark/wordcountoutScala")
 
 ***************Find totalRevenuePer day - new version **************************
-val ordersRDD = sc.textFile("/user/cloudera/sqoop_import/orders")
-val order_items = sc.textFile("/user/cloudera/sqoop_import/order_items")
+val ordersFile = sc.textFile("/user/cloudera/sqoop_import/orders")
+val order_itemsFile = sc.textFile("/user/cloudera/sqoop_import/order_items")
 
-ordersRDD.take(5).foreach(println)
-order_items.take(5).foreach(println)
+ordersFile.take(5).foreach(println)
+order_itemsFile.take(5).foreach(println)
 
-val ordersMap = ordersRDD.map(rec => (rec.split(",")(0).toInt , rec.split(",")(1)))
-ordersMap.take(5).foreach(println)
+val orders = ordersFile.map(rec => (rec.split(",")(0).toInt , rec.split(",")(1)))
+orders.take(5).foreach(println)
 
-val orderItemsMap = order_items.map(rec => (rec.split(",")(1).toInt , rec.split(",")(4).toDouble))
-orderItemsMap.take(5).foreach(println)
+val orderItems = order_itemsFile.map(rec => (rec.split(",")(1).toInt , rec.split(",")(4).toDouble))
+orderItems.take(5).foreach(println)
 
-val ordersJoinOrderItems = orderItemsMap.join(ordersMap)
+val ordersJoinOrderItems = orderItems.join(orders)
 ordersJoinOrderItems.take(5).foreach(println)
 
 val ordersJoinOrderItemsMap = ordersJoinOrderItems.map(rec => (rec._2._2, rec._2._1))
@@ -129,7 +129,8 @@ val revenuePerOrderPerDay = ordersJoinOrderItemsMap.reduceByKey((acc , value) =>
 //now discard the order# and just fetch order date and revenue 
 val revenuePerOrderPerDayMap = revenuePerOrderPerDay.map(rec => (rec._1._1 , rec._2))
 
-val revenuePerDayWithOrders= revenuePerOrderPerDayMap.aggregateByKey((0.0 , 0)) (                                          (acc , value) => (acc._1 + value , acc._2 + 1) , 
+val revenuePerDayWithOrders= revenuePerOrderPerDayMap.aggregateByKey((0.0 , 0))
+((acc , value) => (acc._1 + value , acc._2 + 1) , 
 (x,y) => (x._1 + y._1 , x._2 + y._2) )
 
 revenuePerDayWithOrders.take(100).foreach(println)
