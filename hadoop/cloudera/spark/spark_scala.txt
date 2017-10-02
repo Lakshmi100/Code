@@ -118,7 +118,7 @@ val ordersRDD = sc.textFile("/user/cloudera/sqoop_import/orders")
 val ordersItemsRDD = sc.textFile("/user/cloudera/sqoop_import/order_items")
 
 val ordersMap = ordersRDD.map(rec => (rec.split(",")(0) , rec))
-val orderItemsMap = orderItemsRDD.(rec => (rec.split(",")(1) , rec))
+val orderItemsMap = orderItemsRDD.map(rec => (rec.split(",")(1) , rec))
 
 val ordersJoinOrderItems = orderItemsMap.join(ordersMap)
 
