@@ -1,0 +1,31 @@
+TopPricedProductsIncategory
+
+val products = sc.textFile("/user/lakshmit/problem2a/products")
+val categories = sc.textFile("/user/lakshmit/problem2a/categories")
+
+case class Product(product_id: Int , product_category_id: Int,product_name: String , product_description: String , product_price: Float,product_image: String)
+
+case class Category(category_id: Int , category_department_id: Int , category_name: String)
+
+val productsDF = products.map(rec => { var d = rec.split("\\|"); Product(d(0).toInt , d(1).toInt , d(2) , d(3) , d(4).toFloat, d(5))}).toDF
+
+productsDF.show
+
+val categoriesDF = categories.map(rec => { var d = rec.split("\\|"); Category(d(0).toInt , d(1).toInt , d(2))}).toDF
+
+categoriesDF.show
+
+val joinProducts = productsDF.join(categoriesDF , productsDF("product_category_id") === categoriesDF("category_id"))
+
+joinProducts.registerTempTable("joinProducts")
+
+
+
+val topPricedProducts = select p.product_id ,p.product_price , c.category_id , c.category_name , rank() over (partition by category_id order by product_price) price_rank , dense_rank() over (partition by category_id order by product_price) price_dense_rank from joinProducts order by category_id,price_rank, price_dense_rank
+
+
+//this is just pure sql , to cross check in mysql
+
+select p.product_id ,p.product_price , c.category_id , c.category_name , rank() over (partition by category_id order by product_price) price_rank , dense_rank() over (partition by category_id order by product_price) price_dense_rank from products p join categories c on p.product_category_id = c.category_id  order by category_id ,price_rank, price_dense_rank
+;
+

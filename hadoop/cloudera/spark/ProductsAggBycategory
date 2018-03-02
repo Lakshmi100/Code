@@ -1,0 +1,38 @@
+//ProductsSortBycategory
+//problem8
+
+sqoop import --connect 'jdbc:mysql://nn01:itversity.com:3306/retail_db' \
+--username retail_dba --password itversity \
+--table products \
+--warehouse-dir /user/lakshmit \
+--fields-terminated-by '|'
+
+
+sqoop import --connect 'jdbc:mysql://nn01.itversity.com:3306/retail_db' \
+--username retail_dba --password itversity \
+--table categories \
+--warehouse-dir /user/lakshmit \
+--fields-terminated-by '|'
+
+
+//
+
+
+
+val joinProducts = productsDF.join(categoriesDF , productsDF("product_category_id") === categoriesDF("category_id"))
+joinProducts: org.apache.spark.sql.DataFrame = [product_id: int, product_category_id: int, product_name: string, product_description: string, product_price: float, product_image: string, category_id: int, category_department_id: int, category_name: string]
+
+joinProducts.registerTempTable("joinProducts")
+
+val sortProductsByPrice = sqlContext.sql("select category_id , category_name, round(max(product_price),2) max_price, round(min(product_price) , 2 ) min_price , round(avg(product_price), 2) avg_price from joinProducts where product_price < 100 group by category_id,category_name order by max_price")
+
+
+
+val sortProductsByPrice = sqlContext.sql("select category_id , category_name, round(max(product_price),2) max_price, round(min(product_price) , 2 ) min_price , round(avg(product_price), 2) avg_price from products join categories on product_category_id = category_id group by category_id,category_name order by max_price")
+
+
+
+
+
+
+

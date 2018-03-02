@@ -1,0 +1,59 @@
+
+
+import org.apache.spark.sql.functions._
+
+import sqlContext.implicits._
+
+val ordersRDD = sc.textFile("/user/lakshmit/retail_db/orders").map(rec => 
+{val r = rec.toString.split(",")
+(r(0).toInt , r(1),r(2).toInt,r(3))  })
+
+ordersRDD.take(3).foreach(println)
+
+case class Order(order_id: Int , order_date: String , order_customer_id: Int, order_status: String)
+
+val ordersDF = ordersRDD.map(r => Order(r._1, r._2 ,r._3, r._4)).toDF
+
+ordersDF.show
+
+case class OrderItem(order_item_id: Int , order_item_order_id: Int , order_item_product_id: Int, order_item_quantity: Int ,order_item_subtotal: Float , order_item_product_price: Float)
+
+
+val orderItemsRDD = sc.textFile("/user/lakshmit/retail_db/order_items").map(
+rec => {
+val r = rec.toString.split(",")
+(r(0).toInt , r(1).toInt,r(2).toInt,r(3).toInt , r(4).toFloat ,r(5).toFloat )  
+})
+
+orderItemsRDD.take(3).foreach(println)
+
+val orderItemsDF = orderItemsRDD.map(r => OrderItem(r._1 , r._2, r._3 , r._4,r._5 , r._6)).toDF
+
+orderItemsDF.show
+
+val joinOrdersDF = ordersDF.join(orderItemsDF , ordersDF("order_id") === orderItemsDF("order_item_order_id"))
+
+joinOrdersDF.show
+
+val orderRevenuePerOrderPerDay = joinOrdersDF.groupBy(from_unixtime(col("order_date")/1000).alias("Date") , col("order_id")).agg(round(sum("order_item_subtotal"),2)).orderBy(col("Date").desc)
+
+val totalRevenueAndTotalOrdersPerDay = orderRevenuePerOrderPerDay.map(x => (x(0).toString,x(2).toString.toFloat)).aggregateByKey((0.0 , 0))((acc , value) => (acc._1 + value , acc._2 + 1), (x,y) => (x._1 + y._1 , x._2 + y._2))
+
+totalRevenueAndTotalOrdersPerDay.saveAsTextFile("/user/lakshmit/problem1/totalRevAndtotalOrdersPerDay")
+
+val avgRevenuePerDay = totalRevenueAndTotalOrdersPerDay.map(x => (x._1 , x._2._1 / x._2._2))
+
+///another way of doing it with just DF
+
+val orderRevenueAndDate = joinOrdersDF.map(x=> ((x(1) ,x(0).toString.toInt), x(8).toString.toFloat) )
+
+val totalRevAndtotalOrdersPerday = orderRevenueAndDate.map(x => (x(0).toString,x(2).toString.toFloat)).aggregateByKey(0.0 , 0) ( (acc, value) => ( acc._1 + value ,  acc._2 + 1)  , (x ,y) => ( x._1 + y._1 , x._2 + y._2)) 
+
+
+
+
+
+
+
+
+

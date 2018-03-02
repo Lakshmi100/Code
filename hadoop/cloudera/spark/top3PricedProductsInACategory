@@ -1,0 +1,32 @@
+val productsFile = sc.textFile("/user/lakshmit/retail_db/products")
+
+val categoriesFile = sc.textFile("/user/lakshmit/retail_db/categories")
+
+
+case class Product(product_id: Int , product_category_id: Int,product_name: String , product_description: String, product_price: Float , product_image: String)
+
+case class Category(category_id: Int , category_department_id: Int , category_name: String)
+
+val productsDF = productsFile.map(rec => ({ val p = rec.split(",");  
+Product(p(0).toInt , p(1).toInt  , p(2)  , p(3)  , p(4).toFloat  , p(5)) }) ).toDF
+
+
+val categoriesDF = categoriesFile.map(rec => { val c = rec.split(",");  
+Category(c(0).toInt , c(1).toInt  , c(2) ) }).toDF
+
+productsDF.show
+
+categoriesDF.show
+
+
+val productsJoinCategoriesDF = productsDF.join(categoriesDF , productsDF("product_category_id") === categoriesDF("category_id"))
+
+productsJoinCategoriesDF.registerTempTable("productsCategories")
+
+
+val sortProductsByPriceInCategory = sqlContext.sql("select category_id , product_price ,rank() over (partition by category_id order by product_price desc) product_rank ,   dense_rank() over (partition by category_id order by product_price desc) product_dense_rank from productsCa
+tegories order by category_id , product_dense_rank , product_rank")
+
+group by category_id 
+
+partition by category_id 

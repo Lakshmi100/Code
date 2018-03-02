@@ -1,0 +1,43 @@
+//AvgOrderRevPerDay using DF
+ 
+
+val ordersFile = sc.textFile("/user/lakshmit/retail_db/orders")
+val order_itemsFile = sc.textFile("/user/lakshmit/retail_db/order_items")
+
+
+ordersFile.take(10).foreach(println)
+order_itemsFile.take(10).foreach(println)
+
+
+ case class Order(order_id: Int , order_date: String , order_customer_id: Int , order_status: String)
+
+ val ordersDF = ordersFile.map(rec => ( {
+   val r = rec.split(",")
+   Order(r(0).toInt ,  r(1) , r(2).toInt, r(3)) }) ).toDF
+
+   ordersDF.show
+
+
+case class OrderItem(order_item_id:Int , order_item_order_id: Int, order_item_product_id: Int,
+order_item_quantity: Int , order_item_subtotal: Float , order_item_product_price: Float)
+
+ val orderItemsDF = order_itemsFile.map(rec => ( {
+ val r = rec.split(",")
+ OrderItem(r(0).toInt ,  r(1).toInt , r(2).toInt, r(3).toInt , r(4).toFloat , r(5).toFloat) }) ).toDF
+
+
+ val ordersJoinOrderItemDF = ordersDF.join(orderItemsDF , ordersDF("order_id") === orderItemsDF("order_item_order_id"))
+
+   val ordersAndDate = ordersJoinOrderItemDF.map(x => ((x(1).toString , x(0).toString.toInt)  , x(1).toString.toFloat))
+
+   ordersAndDate.take(5).foreach(println)
+
+val  perOrderTotalWithDates = ordersAndDate.reduceByKey((x ,y) => x + y)
+
+val perOrderTotalNoOrderID = perOrderTotalWithDates.map(rec => (rec._1._1 , rec._2))
+
+val orderRevPerDayAndOrderCount = perOrderTotalNoOrderID.aggregateByKey((0.0 ,0)) ((acc , value) => (acc._1 + value , acc._2 + 1) , (x, y) => (x._1 + y._1 , x._2 + y._2)).sortByKey(false)
+
+val avgRevPerDay = orderRevPerDayAndOrderCount.map(x =>  (x._1 , x._2._1 /x._2._2))
+
+

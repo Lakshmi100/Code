@@ -1,0 +1,23 @@
+//find order Total and order count per day per order status
+
+
+val ordersDF = sqlContext.read.avro("/user/lakshmit/problem1/orders")
+
+val orderItemsDF = sqlContext.read.avro("/user/lakshmit/problem1/order_items")
+
+val joinOrdersWithOrderItemsDF = ordersDF.join(orderItemsDF , ordersDF("order_id") === orderItemsDF("order_item_order_id"))
+
+joinOrdersWithOrderItemsDF.registerTempTable("ordersJoin")
+
+
+val ordersCountByStatus = sqlContext.sql("select to_date(from_unixtime(cast(order_date/1000 as bigint))), order_status , count(distinct(order_item_order_id)) total_orders, cast(sum(order_item_subtotal) as DECIMAL (10,2)) total_amount from ordersJoin group by order_date , order_status order by order_date desc , order_status , total_amount desc , total_orders")
+
+
+sqlContext.setConf("spark.sql.parquet.compression.codec" , "gzip") // parquet saves as gzip //compression by default
+
+ordersCountByStatus.write.parquet("/user/cloudera/problem1/result4a-gzip")
+
+
+// check the same in mysql using below query
+
+select order_date, order_status , count(distinct(order_item_order_id)) total_orders , cast(sum(order_item_subtotal) as DECIMAL (10,2)) total_amount from orders join order_items on order_id = order_item_order_id group by order_date , order_status order by order_date desc , order_status , total_amount desc , total_orders

@@ -1,0 +1,34 @@
+//Order agg statistics
+
+//select order count and total order amount per day per status from
+order and order_items dataset
+
+//create orders DF
+//create order_items DF
+
+//create joinOrdersDF
+//now use groupBy function on the DF
+
+
+val orderAggsDF = joinOrdersDF.
+groupBy(to_date(from_unixtime(col("order_date")/1000)).alias("formatted_date") , col("order_status")).
+agg(round(sum(col("order_item_subtotal")) ,2).alias("total_amount") , countDistinct(col("order_id")).alias("total_orders")).orderBy(col("formatted_date").desc,col("order_status"),col("total_amount").desc , col("total_orders"))
+
+
+
+//registerTempTable("joinOrders")
+
+
+
+sqlContext.sql("select to_date(from_unixtime(cast(order_date/1000 as bigint))) Date, order_status , sum(order_item_subtotal) total_amount ,count(distinct(order_id)) total_orders from joinOrders group by order_date,order_status order by order_date desc,total_amount desc ,total_orders).write.parquet("/user/lakshmit/problem1/order_aggregates")
+
+
+//
+
+//to get date in your own format
+
+show functions; -- to show functions in hive
+
+describe function <function name>
+
+select concat(year(current_date) ,"-" ,month(current_date)

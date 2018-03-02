@@ -1,0 +1,28 @@
+
+//Sort products in a Category by price, get the max price ,min price , Avg price and total products in a category
+//this is just sorted using products table alone ,  do the join with categories table to get the
+//category name 
+
+
+val productsRDD = sc.textFile("/user/lakshmit/problem2/products").map(rec => { val r = rec.split("\\|") (r(0), r(1) , r(2),r(3) , r(4) , r(5)) })
+
+val productsDF = productsRDD.map(rec => ({ val p = rec.split(",");  
+Product(p(0).toInt , p(1).toInt  , p(2)  , p(3)  , p(4).toFloat  , p(5)) }) ).toDF
+
+
+val dfResult = productsDF.filter(col("product_price") < 100).groupBy(col("product_category_id")).agg(max(col("product_price")).alias("to
+p_priced") , countDistinct(col("product_id")).alias("Total_products") ,round(avg(col("product_price")), 2 ).alias("Avg_price") ,min(col("produc
+t_price")).alias("least_priced")).orderBy(col("product_category_id"))
+
+
+//same results above obtained using Dataframe and aggregateByKey
+
+val rddResult = productsDF.filter("product_price < 100").map(x => (x(1).toString.toInt , x(4).toString.toFloat)).aggregateByKey((0.000 ,
+0 , 0.000 ,99999999.0000))(
+     | (acc ,value) => (math.max(acc._1 , value) , acc._2 + 1 , acc._3 + value , math.min(acc._4,value)) ,  (x,y) => (math.max(x._1 , y._1) ,x.
+_2 + y._2 , (x._3 + y._3) , math.min(x._4,y._4) )).map(x => (x._1 , x._2._1 , (x._2._3 / x._2._2) , x._2._2 , x._2._4)).sortBy(_._1)
+
+
+//check ur results in mysql ,here is the query
+
+select product_category_id, round (max(product_price) ,2) top_priced,count(distinct(product_id)) total_products, round(avg(product_price), 2) avg_price , round(min(product_price) ,2) least_priced  from products where product_price < 100 group by product_category_id order by product_category_id;
