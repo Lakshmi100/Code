@@ -1,0 +1,60 @@
+//Hive queries
+
+select order_customer_id ,order_id ,round(sum(order_item_subtotal) , 2) order_total , 
+to_date(from_unixtime(cast(order_date/1000 as bigint)))
+from  order_items join orders
+on order_id = order_item_order_id
+group by order_id , order_customer_id ,order_date
+order by order_total desc
+limit 3
+
+//same query for mysql  , above query needs to run on avro datafile , so formatting on date 
+select order_customer_id ,order_id ,round(sum(order_item_subtotal) , 2) order_total , order_date
+from  order_items join orders
+on order_id = order_item_order_id
+group by order_id , order_customer_id ,order_date
+order by order_total desc
+limit 3
+
+
+//same query with rank() over
+
+select t.* from (
+select order_id ,round(sum(order_item_subtotal) , 2) as order_total ,to_date(from_unixtime(cast(order_date/1000 as bigint))) as formatted_date, rank() over (  order by (round(sum(order_item_subtotal) , 2)) desc) as order_total_rank
+from  order_items join orders
+on order_id = order_item_order_id
+group by order_id , order_date) t
+where t.order_total_rank < 5
+
+
+create table stocks_revenue_monthly 
+ROW FORMAT DELIMITED fields terminated by ',' lines terminated by '\n' 
+STORED AS TEXTFILE 
+as
+select stockticker, substr(tradedate, 1, 7) trademonth,
+sum(volume) monthly_volume
+from stocks_eod
+group by stockticker, substr(tradedate, 1,7) 
+
+
+select X.order_date , max(X.total_revenue)
+ from (select order_date , round(sum(order_item_subtotal), 2 ) total_revenue from orders join order_items on order_id = order_item_order_id group by order_date) X 
+               
+
+"select X.order_date , X.total_revenue from (select order_date , round(sum(order_item_subtotal), 2 ) total_revenue from orders join  order_items on order_id = order_item_order_id group by order_date)X  where X.total_revenue=max(X.total_revenue) group by X.order_date , X.total_revenue"
+
+
+
+    "select max(X.total_revenue)  max_revenue , X.order_date from (select order_date , round(sum(order_item_subtotal), 2 ) total_revenue from orders join  order_items on order_id = order_item_order_id group by order_date)X group by X.order_date)"
+
+
+
+
+
+sqlContext.sql("select o.order_date , round(sum(order_item_subtotal), 2 ) total from orders o join order_items oi on o.order_id = oi.order_item_order_id group by o.order_date having  total = (select max(total_revenue) max_revenue from ( select order_date , round(sum(order_item_subtotal), 2 ) total_revenue from orders join  order_items on order_id = order_item_order_id group by order_date) X) Y").show
+
+
+sqlContext.sql("select Y.max_revenue , Y.order_date from (select max(X.total_revenue) max_revenue , X.order_date from ( select order_date , round(sum(order_item_subtotal), 2 ) total_revenue from orders join order_items on order_id = order_item_order_id group by order_date) X") Y).show
+
+
+sqlContext.sql("select max_revenue , order_dateselect max(X.total_revenue)  max_revenue , X.order_date from (select order_date , round(sum(order_item_subtotal), 2 ) total_revenue from orders join  order_items on order_id = order_item_order_id group by order_date)X group by X.order_date").show

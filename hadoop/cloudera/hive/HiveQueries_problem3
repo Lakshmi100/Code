@@ -1,0 +1,59 @@
+
+
+//Query in hive that shows all orders belonging to a certain day. This day is when the most orders were placed. select this data from orders_sqoop.
+
+
+select * from orders_sqoop as Z where Z.order_date in (select Y.order_date from (select X.order_date, count(order_id) total_orders from orders_sqoop as X group by X.order_date order by total_orders desc limit 1) Y); 
+
+
+create table order_avro(
+order_id int ,
+order_date bigint,
+order_customer_id  int ,
+order_status string)
+partitioned by (order_month string) 
+STORED AS AVRO
+
+INSERT INTO table order_avro partition(order_month)
+select * , substr(to_date(from_unixtime(cast(order_date/1000 as bigint))) , 1,7)
+from orders_sqoop;
+
+
+//u will always get this error when u are dynamically inserting data into a partitioned table
+
+FAILED: SemanticException [Error 10096]: Dynamic partition strict mode requires at least one static partition column. To turn this off set hive.exec.dynamic.partition.mode=nonstrict
+
+//so go ahead and set this feature as instructed by hive , if u have a static partition already existing in there u are good ,without this setting.
+
+hive (lakshmi3)> set hive.exec.dynamic.partition.mode=nonstrict
+
+//creating a static parition ,here is how
+
+//create the table with the partition details always , if u want it partitioned
+create table orders_avro(
+order_id int ,
+order_date bigint,
+order_customer_id  int ,
+order_status string)
+partitioned by (order_month String)
+STORED AS AVRO
+
+//now alter 
+Alter table orders_avro add partition(order_month='2013-07')
+
+INSERT INTO table orders_avro partition (order_month)
+select  order_id , order_date ,order_customer_id , order_status, substr(to_date(from_unixtime(cast(order_date/1000 as bigint))) , 1,7) from orders_sqoop 
+where  substr(to_date(from_unixtime(cast(order_date/1000 as bigint))) , 1,7) = '2013-07';
+
+
+// Query in hive that shows all orders belonging to a certain day. This day is when the most orders were placed. select this data from order_avro.
+
+
+select * from order_avro where order_date in (select X.order_date from (select order_date, count(order_id) total_orders from order_avro group by order_date order by total_orders desc limit 1) X); 
+
+
+select * from orders_sqoop as Z where Z.order_date in (select Y.order_date from (select X.order_date , count(order_id) total_orders from orders_sqoop as X group by X.order_date order by total_orders desc,Y.order_date desc limit 1 )Y );
+
+
+
+

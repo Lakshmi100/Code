@@ -1,0 +1,70 @@
+Create table orders_partitioned_by_status(
+order_id int,
+order_date String,
+order_customer_id int)
+partitioned by (order_status String)
+ROW FORMAT DELIMITED FIELDS TERMINATED BY ','' 
+
+Create table orders_by_month(
+order_id int,
+order_date String,
+order_customer_id int,
+order_status String)
+partitioned by (order_month String)
+ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
+
+//derive year and month from order_date field from original orders table
+//work on this above table urself
+
+
+insert into orders_by_month partition(order_month)
+               > select * , cast(concat(substr(order_date ,1,4) , substr(order_date , 6,2)) as int)order_month from orders;
+
+//bucketing syntax goes likes this
+
+Create table orders_by_month(
+order_id int,
+order_date String,
+order_customer_id int,
+order_status String)
+CLUSTERED by (order_id) into <num buckets>
+ROW FORMAT DELIMITED FIELDS TERMINATED BY ‘,’ 
+
+//<num buckets> will take the number if buckets u want to buckets the
+//order_ids into
+
+
+
+//Hive QL queries , most sql queries will work
+//try show functions , describe function <function_name> to know format
+//get no of orders per day
+
+select cast( data_fomat( order_date , ‘YMM’) into int) order_month , count(1) order_count
+from orders
+where order_status in (‘COMPLETE’ , ‘CLOSED’)
+group by order_month 
+order by order_count desc
+
+//u can use the same above queries in Spark shell in Hive Context
+
+CREATE table orders_mine(
+               order_id int,
+               order_date string ,
+               order_customer_id int,
+               order_status String ) 
+               ROW FORMAT DELIMITED Fields terminated by ',' 
+               lines terminated by '\n'
+
+
+
+ CREATE external TABLE orders(
+  order_id int,
+  order_date String,
+  order_customer_id int,
+  order_status String
+ )
+ ROW FORMAT delimited Fields terminated by ','
+ STORED AS TEXTFILE
+ LOCATION 'hdfs://nn01.itversity.com:8020/apps/hive/warehouse/lakshmit.db/orders'
+
+

@@ -1,0 +1,57 @@
+Hive Context DF Queries
+
+val ordersByStatusDF = sqlContext.sql("select order_status , count(1) count_by_status ,order_date ,sum(order_item_subtotal) total_amount from orders o join order_items oi on o.order_id = oi.order_item_order_id group by order_status,order_date order by order_date desc")
+
+
+val ordersByStatusCountedPerDay = ordersJoinedOrderItemsDF.
+     | groupBy(to_date(from_unixtime(col("order_date")/1000)).alias("order_formatted_date"), col("order_status")).
+     | agg(round(sum("order_item_subtotal") ,2).alias("total_amount") , countDistinct("order_id").alias("total_orders")).
+     | orderBy(col("order_formatted_date") desc, col("order_status") , col("total_amount") desc , col("total_orders"))
+
+
+
+     //save the output in mysql table
+
+     create table orders_by_status_lakshmi(order_date date , order_status varchar(20) , total_amout_per_day float , total_orders_per_day int)
+
+     application_1504456427978_6109
+
+
+
+
+     sqoop import --connect jdbc:mysql://nn01.itversity.com:3306/retail_db --username retail_dba --password itversity -m 8 --table products --target-dir /user/lakshmit/products --as-textfile --lines-terminated-by '\n' --fields-terminated-by '|' 
+
+
+
+"437,20,ASICS Women's GEL-Noosa Tri 9 Running Shoe,,139.99,http://images.acmesports.sports/ASICS+Women%27s+GEL-Noosa+Tri+9+Running+Shoe", "439,20,ASICS Women's GEL-Nimbus 15 Running Shoe,,119.99,http://images.acmesports.sports/ASICS+Women%27s+GEL-Nimbus+15+Running+Shoe", "446,20,Nike Women's LunarGlide+ 5 Running Shoe,,109.99,http://images.acmesports.sports/Nike+Women%27s+LunarGlide%2B+5+Running+Shoe", "447,20,Nike Women's Free TR Connect 2 Training Shoe,,109.99,http://images.acmesports.sports/Nike+Women%27s+Free+TR+Connect+2+Training+Shoe", "450,20,Garmin Forerunner 220 GPS Watch,,249.99,http://images.acmesports.sports/Garmin+Forerunner+220+GPS+Watch", "451,20,Garmin Women's Forerunner 10 GPS Watch,,129.99,http://images.acmesports.sports/Garmin+Women%27s+Forerunner+10+GPS+Watch", "452,20,Garmin vivofit Fitness Band with HRM,,169.99,http://images.acmesports.sports/Garmin+vivofit+Fitness+Band+with+HRM"
+
+
+
+//Problem1 from Arun's blog  - DF result 
+
+val dfresults = sqlContext.sql("select order_date , order_status , count(order_id) total_orders ,sum(order_item_subtotal) total_amount f
+rom orders o join order_items oi on o.order_id = oi.order_item_order_id group by order_date ,order_status order by order_date desc , order_stat
+us , total_amount desc ,  total_orders")
+
+create table result_lakshmi(order_date varchar(255) not null,order_status varchar(255) not null, total_orders int, total_amount numeric, constraint pk_order_result primary key (order_date,order_status)); 
+
+
+select * from orders_sqoop as X where X.order_date in(select inner.order_date from (select Y.order_date , count(1) as
+ total_orders from orders_sqoop as Y group by Y.order_date order by total_orders desc ,Y.order_date desc limit 1) inner);
+
+
+ select * from orders_sqoop as X where X.order_date in (select Z.order_date from (select Y.order_date, count(1) as total_orders from orders_sqoop as Y group by Y.order_date order by total_orders desc, Y.order_date desc limit 1) Z);
+
+
+select weather_type , plant_name
+from plants p join weather W 
+on p.plant_species = w.plant_species
+where p.plant_species in 
+(select Y.plant_species from 
+(select count(X.weather_type) cnt , X.plant_species
+from weather X
+group by plant_species 
+having cnt = 1) Y);
+
+
+

@@ -1,0 +1,45 @@
+// Data Analysis using Spark SQL
+
+
+
+select product_name ,product_id , product_price , department_id , rank() over (partition by department_id order by product_price) product_rank ,dense_rank() over (partition by department_id order by product_price) product_dense_rank from products join categories on product_category_id = category_id join departments on category_department_id = department_id order by department_id, product_rank ,product_dense_rank desc
+
+
+select product_id , product_price , department_id , rank() over (partition by department_id order by product_price) product_rank ,dense_rank() over (partition by department_id order by product_price) product_dense_rank from products join categories on product_category_id = category_id join departments on category_department_id = department_id order by department_id, product_rank desc,product_dense_rank
+
+
+
+//customers with unique product selection
+
+select customer_lname , customer_id , count(distinct(order_item_product_id))unique_products from customers join orders on order_customer_id = customer_id join order_items on order_id = order_item_order_id group by customer_id,customer_lname order by unique_products desc , customer_id limit 10
+
+sqlContext.sql("select p.* from products p join order_items oi on p.product_id = oi.order_item_product_id join orders o on order_item_order_id = o.order_id join
+UniqueCustomers uc on o.order_customer_id = uc.customer_id where p.product_price < 100")
+
+
+
+val productsByCategory = sqlContext.sql("select product_id , product_price , department_id , rank() over (partition by department_id order by product_price) product_rank ,dense_rank() over (partition by department_id order by product_price) product_dense_rank from products join categories on product_category_id = category_id join departments on category_department_id = department_id order by department_id, product_rank desc,product_dense_rank")
+
+
+
+productsByCategory.registerTempTable("productsSort")
+
+sqlContext.sql("Create table problem7_lakshmi.productsSort as select * from productsSort where product_price < 100")
+
+
+customersWithUniqueProducts.registerTempTable("UniqueCustomers")
+
+
+
+//check on why we need a distinct on this query ??
+val productDetailsOFUniqueCust = sqlContext.sql("select distinct p.* from products p join order_items oi on p.product_id = oi.order_item_product_
+id join orders o on order_item_order_id = o.order_id join UniqueCustomers uc on o.order_customer_id = uc.customer_id where p.product_price < 10
+0")
+
+productDetailsOFUniqueCust.registerTempTable("productsUniqueCust")
+
+
+sqlContext.sql("Create table problem7_lakshmi.productsUniqueCust as select * from productsUniqueCust")
+
+
+///
